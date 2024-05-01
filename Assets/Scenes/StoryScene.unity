@@ -664,6 +664,7 @@ GameObject:
   m_Component:
   - component: {fileID: 499436300}
   - component: {fileID: 499436301}
+  - component: {fileID: 499436302}
   m_Layer: 0
   m_Name: StoryTest
   m_TagString: Untagged
@@ -698,11 +699,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d9da12664a4cb14eaac2f7f891dc2a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &499436302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 499436298}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b50fbea3b19bc747b97302c135abcbe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   inputField: {fileID: 1079664277}
   button: {fileID: 1920761190}
   scroll: {fileID: 356682880}
-  sent: {fileID: 8660877164928630359, guid: 53cd26a6eefa5a74086203cd118a04d3, type: 3}
-  received: {fileID: 961534450149497043, guid: adc0146c2853ed1418133faaf4379eb1, type: 3}
+  sentPrefab: {fileID: 8660877164928630359, guid: 53cd26a6eefa5a74086203cd118a04d3, type: 3}
+  receivedPrefab: {fileID: 961534450149497043, guid: adc0146c2853ed1418133faaf4379eb1, type: 3}
 --- !u!1 &1079664275
 GameObject:
   m_ObjectHideFlags: 0

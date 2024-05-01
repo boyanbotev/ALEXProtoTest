@@ -1,36 +1,32 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System.Collections.Generic;
-using Unity.VisualScripting.Antlr3.Runtime;
-using Newtonsoft.Json.Linq;
-using System.Threading;
-using System;
-using static System.Net.Mime.MediaTypeNames;
-using System.Linq;
 using UnityEditor.VersionControl;
-using static UnityEditor.Progress;
-using UnityEditor.MPE;
 
 namespace OpenAI
 {
     public class StoryTest : MonoBehaviour
     {
-        [SerializeField] private InputField inputField;
-        [SerializeField] private Button button;
-        [SerializeField] private ScrollRect scroll;
-
-        [SerializeField] private RectTransform sent;
-        [SerializeField] private RectTransform received;
-
-        private float height;
         private OpenAIApi openai = new OpenAIApi();
+        private UIManager uiManager;
 
         private List<ChatMessage> messages = new List<ChatMessage>();
-        private string systemPrompt = "You are a bestselling fiction writer with expert writing skills. You write punchy dialogue and explosive character interactions following the principles of 'Show Don't Tell.' You describe specific actions and never summarize. You never use adverbs. You are writing a story about a 14 year old schoolboy in Surbiton, UK, called Alex. When the user submits statistics about the main character, you interpret them describing Alex's life, showing his development in both positive or negative ways over time, depending on the statistics submitted by the user. Only respond with fiction text. Write in a direct, punchy, simple and popular style. Include recurring characters and show how Alex's relationships with them.\n\nHere is a style example:\nWHAM.An rugby ball knocked into Alex's head, sending him flying.\n'Catch, you muppet!' yelled Jordan, but Alex just scrambled to get out of the way as a mob of Year 8s charged towards him.\n";
+        private List<string> activeConcepts = new List<string>();
+        private string systemPrompt = "You are a bestselling fiction writer with expert writing skills. You write punchy dialogue and explosive character interactions following the principles of 'Show Don't Tell.' You describe specific actions and never summarize. You never use adverbs. You are writing a story about a 14 year old schoolboy in Surbiton, UK, called Alex, the kind of boy who could end up becoming a school shooter. When the user submits statistics about the main character, you interpret them describing Alex's life, showing his development in both positive or negative ways over time, depending on the statistics submitted by the user. Only respond with fiction text. Write in a direct, punchy, simple and popular style. Include recurring characters and show how Alex's relationships with them develop. Each section should develop plot threads from previous sections.\nHere is a style example:\nWHAM.An rugby ball knocked into Alex's head, sending him flying.\n'Catch, you muppet!' yelled Jordan, but Alex just scrambled to get out of the way as a mob of Year 8s charged towards him.\n";
+        private string conceptSystemPrompt = "Choose words or phrases that the events in this part of the story may trigger Alex to think about. For example, to represent the idea of rebelling against authortiy, you can choose 'rebel' or 'fight-the-system'. Try to choose simple words: instead of 'isolation,' choose 'lonely.' List the words separated by commas in lowercase, and if you have a phrase, connect each word with a dash. For example:\n girlfriend, bully, guitar, artist, parallel-universes.\nHere's another example. If the text was \n'WHAM. A rugby ball knocked into Alex's head, sending him flying.\n'Catch, you muppet!' yelled Jordan, but Alex just scrambled to get out of the way as a mob of Year 8s charged towards him.' we would return:\nJordan,rugby, muppet.\nMake sure the words are specific to the events in the story and send the story in an interesting direction. Most importantly - do not choose abstract nouns. The best choices are physical objects such as guitar, activities like rubgy or areas of interest like philosophy, or new identity labels like rocker, loner, genius. Make sure the words or phrases you choose are NOT included in the following list:\n";
+
+        private void OnEnable()
+        {
+            UIManager.onButtonClick += RequestStory;
+        }
+
+        private void OnDisable()
+        {
+            UIManager.onButtonClick -= RequestStory;
+        }
 
         private void Start()
         {
-            button.onClick.AddListener(MakeMessageRequest);
+            uiManager = GetComponent<UIManager>();
 
             var systemMessage = new ChatMessage()
             {
@@ -41,85 +37,105 @@ namespace OpenAI
             messages.Add(systemMessage);
         }
 
-        private async void MakeMessageRequest()
+        private async void RequestStory(string inputText)
         {
-            var newMessage = new ChatMessage()
+            AddUserMessage(inputText);
+
+            uiManager.ClearInputText();
+            uiManager.SetInputAllowed(false);
+
+            var message = await MakeRequest(new CreateChatCompletionRequest()
             {
-                Role = "user",
-                Content = inputField.text
-            };
-
-            AppendMessage(newMessage);
-
-            messages.Add(newMessage);
-
-            inputField.text = "";
-            SetInputAllowed(false);
-
-            var completionResponse = await openai.CreateChatCompletion(new CreateChatCompletionRequest()
-            {
-                Model = "gpt-3.5-turbo",
+                Model = "gpt-4-turbo",
                 Messages = messages,
                 FrequencyPenalty = 0.2f,
                 PresencePenalty = 0.2f,
                 MaxTokens = 750,
             });
 
+            if (message != null)
+            {
+                AddMessage(message.Value);
+                GetConcepts(message.Value);
+            }
+
+            uiManager.SetInputAllowed(true);
+        }
+
+        async void GetConcepts(ChatMessage message)
+        {
+            var activeConceptsString = activeConcepts.ToString();
+            var conceptSystemMessage = new ChatMessage()
+            {
+                Role = "system",
+                Content = conceptSystemPrompt + activeConceptsString,
+            };
+
+            List<ChatMessage> conceptMessageList = new List<ChatMessage>
+            {
+                conceptSystemMessage,
+                message,
+            };
+
+            var conceptMessage = await MakeRequest(new CreateChatCompletionRequest()
+            {
+                Model = "gpt-3.5-turbo",
+                Messages = conceptMessageList,
+                MaxTokens = 50,
+            });
+
+            char[] separators = { ',', '.', ' ' };
+            string[] words = conceptMessage.Value.Content.Split(separators, System.StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var word in words)
+            {
+                // Actually we only add if the user chooses it
+                if (!activeConcepts.Contains(word))
+                {
+                    Debug.Log(word);
+                    activeConcepts.Add(word);
+                } 
+                else
+                {
+                    Debug.Log(word + "is already in active concepts");
+                }
+            }
+        }
+
+        async System.Threading.Tasks.Task<ChatMessage?> MakeRequest(CreateChatCompletionRequest request)
+        {
+            var completionResponse = await openai.CreateChatCompletion(request);
+
             if (completionResponse.Choices != null && completionResponse.Choices.Count > 0)
             {
                 var message = completionResponse.Choices[0].Message;
                 message.Content = message.Content.Trim();
 
-                messages.Add(message);
-                AppendMessage(message);
+                return message;
             }
             else
             {
                 Debug.LogWarning("No text was generated from this prompt.");
+                return null;
             }
         }
 
-        private void AppendMessage(ChatMessage? message = null)
+        private void AddUserMessage(string inputText)
         {
-            PreRebuildLayout();
-
-            var item = Instantiate(message != null && message?.Role == "user" ? sent : received, scroll.content);
-
-            if (message != null)
+            var newMessage = new ChatMessage()
             {
-                item.GetChild(0).GetChild(0).GetComponent<UnityEngine.UI.Text>().text = message.Value.Content;
-            }
+                Role = "user",
+                Content = inputText
+            };
 
-            RebuildLayout(item);
-
-            Debug.Log(message);
+            AddMessage(newMessage);
         }
 
-        private void PreRebuildLayout()
+        void AddMessage(ChatMessage message)
         {
-            scroll.content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 0);
-        }
-
-        private void RebuildLayout(RectTransform item)
-        {
-            item.anchoredPosition = new Vector2(0, -height);
-            LayoutRebuilder.ForceRebuildLayoutImmediate(item);
-            height += item.sizeDelta.y;
-            scroll.content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
-            scroll.verticalNormalizedPosition = 0;
-        }
-
-        public RectTransform GetLatestMessageUI()
-        {
-            return (RectTransform) scroll.content.GetChild(scroll.content.childCount - 1);
-        }
-
-        void SetInputAllowed(bool isAllowed)
-        {
-            button.enabled = isAllowed;
-            inputField.enabled = isAllowed;
+            uiManager.AppendMessage(message);
+            messages.Add(message);
         }
     }
-
-    // stats: Love, Anger/Rebelliousness, Depression, Comfort-seeking-ness
 }
+// comfort-seeking-ness: 8/10, depression: 2/10, love/friendship: 1/10, anger/rebelliousness: 1/10
