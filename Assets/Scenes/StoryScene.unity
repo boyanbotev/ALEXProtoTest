@@ -699,6 +699,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d9da12664a4cb14eaac2f7f891dc2a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  comfortSeekingNess: 8
+  depression: 2
+  love: 0
+  anger: 0
+  currentConcept: 
+  spicyness: 75
 --- !u!114 &499436302
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1352,7 +1358,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1289190379}
   m_HandleRect: {fileID: 1289190378}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
