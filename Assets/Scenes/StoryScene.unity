@@ -703,6 +703,7 @@ MonoBehaviour:
   depression: 2
   love: 0
   anger: 0
+  schizophrenia: 0
   currentConcept: 
   spicyness: 75
 --- !u!114 &499436302
@@ -1358,7 +1359,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1289190379}
   m_HandleRect: {fileID: 1289190378}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
