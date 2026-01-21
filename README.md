@@ -3,6 +3,10 @@
 Alex is an interactive story powered by OpenAI's GPT-4. Your actions decide the course of Alex’s life. What you do changes who he will become – a schizophrenic? A stay at home loser? A nerd at the top of his class… or even a cool kid??
 It is all down to you and the inner warfare between different parts of Alex’s soul.
 
+A combination of programmatic logic and API calls to different LLMs allows a custom story to be influenced by the player's choices. The focus is on providing the player with choices of how to develop psychologically, leading to endless brnaching narrative within specific constraints.
+
+Unity Editor Version: 2022.3.14f1
+
 ### OpenAI-Unity Package
 This project is made using the OpenAI-Unity Package: https://github.com/srcnalt/OpenAI-Unity
 In order to run the project, you need to use your API key and organization name (if applicable). To avoid exposing your API key in your Unity project, you can save it in your device's local storage.
